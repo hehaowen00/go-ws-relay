@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <form id="form">
+            <input
+                id="username"
+                type="text"
+                placeholder="Username"
+                required
+                autocomplete="off"
+            >
+            </input>
+            <button id="connectBtn">Connect</button>
+        </form>
+        <p></p>
+        <form id="form2">
+            <input
+                id="message"
+                type="text"
+                placeholder="Message"
+                required
+                autocomplete="off"
+            >
+            </input>
+            <button id="sendBtn">Send</button>
+        </form>
+
+        <div id="messages">
+        </div>
+
+        <script type="text/javascript">
+            let conn = null
+            let username = ""
+
+            const form = document.getElementById("form")
+            form.onsubmit = (e) => {
+                e.preventDefault()
+            }
+            const form2 = document.getElementById("form2")
+            form2.onsubmit = (e) => {
+                e.preventDefault()
+            }
+
+            const connectBtn = document.getElementById("connectBtn")
+            const sendBtn = document.getElementById("sendBtn")
+            const usernameInput = document.getElementById("username")
+            const messageInput = document.getElementById("message")
+            const messages = document.getElementById("messages")
+
+            function initConnection() {
+                conn = new WebSocket("/ws")
+
+                conn.onopen = () => {
+                    sendBtn.disabled = false
+                }
+
+                conn.onmessage = (m) => {
+                    let msg = JSON.parse(m.data)
+                    let sender = msg.Sender
+                    let time = new Date(msg.Timestamp).toLocaleString()
+                    let msgText = msg.Text
+
+                    let p = document.createElement("p")
+                    let text = document.createTextNode(`[${time}] ${sender}: ${msgText}`)
+                    p.appendChild(text)
+                    messages.appendChild(p)
+                }
+
+                conn.onclose = () => {
+                }
+            }
+
+            connectBtn.addEventListener("click", initConnection)
+            connectBtn.disabled = true
+
+            usernameInput.addEventListener("input", (e) => {
+                username = e.target.value.trim()
+                if (conn == null && username != "") {
+                    connectBtn.disabled = false
+                } else {
+                    connectBtn.disabled = true
+                }
+            })
+
+            sendBtn.disabled = true
+            sendBtn.addEventListener("click", () => {
+                conn.send(JSON.stringify({
+                    Sender: username,
+                    Text: messageInput.value,
+                }))
+            })
+        </script>
+    </body>
+</html>
